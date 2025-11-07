@@ -17,7 +17,15 @@ def create_task():
 
 @bp.get("")
 def get_tasks():
-    tasks = Task.query.order_by(Task.id).all()
+    sort_param = request.args.get("sort", default=None, type=str)
+    
+    if sort_param == "asc":
+        tasks = Task.query.order_by(Task.title.asc()).all()
+    elif sort_param == "desc":
+        tasks = Task.query.order_by(Task.title.desc()).all()
+    else:
+        tasks = Task.query.order_by(Task.id).all()
+
     return jsonify([t.to_dict() for t in tasks]), 200
 
 
