@@ -1,31 +1,36 @@
+from app import db
 from datetime import datetime
-from ..db import db
-
 
 class Task(db.Model):
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String, nullable=False)
-    description = db.Column(db.String, nullable=False)
+    description = db.Column(db.String, nullable=True)
     completed_at = db.Column(db.DateTime, nullable=True)
+
+    goal_id = db.Column(db.Integer, db.ForeignKey("goal.id"), nullable=True)
+    goal = db.relationship("Goal", back_populates="tasks")
 
     def to_dict(self):
         return {
             "id": self.id,
             "title": self.title,
             "description": self.description,
-            "is_complete": self.completed_at is not None,
+            "is_complete": self.completed_at is not None
         }
+
+    def to_dict_with_goal(self):
+        d = self.to_dict()
+        d["goal_id"] = self.goal_id
+        return d
 
     @classmethod
     def from_dict(cls, data):
-        try:
-            title = data["title"]
-            description = data["description"]
-        except KeyError as exc:
-            raise KeyError(exc.args[0])
+        if "title" not in data:
+            raise KeyError("title")
+        if "description" not in data:
+            raise KeyError("description")
 
         return cls(
-            title=title,
-            description=description,
-            completed_at=data.get("completed_at"),
+            title=data["title"],
+            description=data["description"]
         )
