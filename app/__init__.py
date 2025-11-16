@@ -2,11 +2,14 @@ from flask import Flask
 from .db import db, migrate
 import os
 
+
 def create_app(config=None):
     app = Flask(__name__)
 
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("SQLALCHEMY_DATABASE_URI")
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
+        "SQLALCHEMY_DATABASE_URI"
+    )
 
     if config:
         app.config.update(config)
@@ -14,7 +17,13 @@ def create_app(config=None):
     db.init_app(app)
     migrate.init_app(app, db)
 
-    from .routes.task_routes import bp as tasks_bp
+    from app.models.task import Task
+    from app.models.goal import Goal
+
+    from app.routes.task_routes import bp as tasks_bp
+    from app.routes.goal_routes import goal_bp
+
     app.register_blueprint(tasks_bp)
+    app.register_blueprint(goal_bp)
 
     return app
