@@ -1,75 +1,95 @@
-from flask import Blueprint, request, jsonify, Response
-from .. import db
-from ..models.task import Task
-from .route_utils import validate_model, create_from_dict_or_400
-from datetime import datetime, UTC
-import requests
-import os
+from flask import Blueprint, request, jsonify, make_response
+from app import db
+from app.models.task import Task
+from app.routes.route_utils import validate_model
 
-bp = Blueprint("tasks", __name__, url_prefix="/tasks")
+bp = Blueprint("tasks_bp", __name__, url_prefix="/tasks")
 
-@bp.post("")
+
+@bp.route("", methods=["POST"])
 def create_task():
-    data = request.get_json() or {}
-    task = create_from_dict_or_400(Task, data)
-    db.session.add(task)
-    db.session.commit()
-    return jsonify(task.to_dict()), 201
+    request_body = request.get_json() or {}
 
-@bp.get("")
-def get_tasks():
-    sort_param = request.args.get("sort")
-    if sort_param == "asc":
+    if "title" not in request_body or "description" not in request_body:
+        return make_response({"details": "Invalid data"}, 400)
+
+    try:
+        new_task = Task.from_dict(request_body)
+    except KeyError:
+        return make_response({"details": "Invalid data"}, 400)
+
+    db.session.add(new_task)
+    db.session.commit()
+
+    return new_task.to_dict(), 201
+
+
+@bp.route("", methods=["GET"])
+def get_all_tasks():
+    sort_query = request.args.get("sort")
+
+    if sort_query == "asc":
         tasks = Task.query.order_by(Task.title.asc()).all()
-    elif sort_param == "desc":
+    elif sort_query == "desc":
         tasks = Task.query.order_by(Task.title.desc()).all()
     else:
-        tasks = Task.query.order_by(Task.id).all()
-    return jsonify([t.to_dict() for t in tasks]), 200
+        tasks = Task.query.all()
 
-@bp.get("/<int:task_id>")
+    response = [task.to_dict() for task in tasks]
+    return jsonify(response), 200
+
+
+@bp.route("/<task_id>", methods=["GET"])
 def get_task(task_id):
     task = validate_model(Task, task_id)
-    return jsonify(task.to_dict()), 200
+    task_dict = task.to_dict()
 
-@bp.put("/<int:task_id>")
+    if task.goal_id is not None:
+        task_dict["goal_id"] = task.goal_id
+
+    return task_dict, 200
+
+
+@bp.route("/<task_id>", methods=["PUT"])
 def update_task(task_id):
     task = validate_model(Task, task_id)
-    data = request.get_json()
-    task.title = data["title"]
-    task.description = data["description"]
-    db.session.commit()
-    return Response(status=204, mimetype="application/json")
+    request_body = request.get_json() or {}
 
-@bp.delete("/<int:task_id>")
+    title = request_body.get("title")
+    description = request_body.get("description")
+
+    if not title or not description:
+        return make_response({"details": "Invalid data"}, 400)
+
+    task.title = title
+    task.description = description
+
+    db.session.commit()
+
+    return "", 204
+
+
+@bp.route("/<task_id>", methods=["DELETE"])
 def delete_task(task_id):
     task = validate_model(Task, task_id)
+
     db.session.delete(task)
     db.session.commit()
-    return Response(status=204, mimetype="application/json")
 
-@bp.patch("/<int:task_id>/mark_complete")
+    return "", 204
+
+
+@bp.route("/<task_id>/mark_complete", methods=["PATCH"])
 def mark_complete(task_id):
     task = validate_model(Task, task_id)
-    task.completed_at = datetime.now(UTC)
+    task.completed_at = task.completed_at or db.func.now()
     db.session.commit()
+    return "", 204
 
-    slack_token = os.environ.get("SLACK_BOT_TOKEN")
-    slack_channel = os.environ.get("SLACK_CHANNEL")
-    message = f"Someone just completed the task: {task.title}"
 
-    if slack_token and slack_channel:
-        requests.post(
-            "https://slack.com/api/chat.postMessage",
-            headers={"Authorization": f"Bearer {slack_token}"},
-            json={"channel": slack_channel, "text": message}
-        )
-
-    return Response(status=204, mimetype="application/json")
-
-@bp.patch("/<int:task_id>/mark_incomplete")
+@bp.route("/<task_id>/mark_incomplete", methods=["PATCH"])
 def mark_incomplete(task_id):
     task = validate_model(Task, task_id)
     task.completed_at = None
     db.session.commit()
-    return Response(status=204, mimetype="application/json")
+    return "", 204

@@ -1,20 +1,20 @@
-from sqlalchemy.orm import Mapped, mapped_column
-from ..db import db
-
+from app import db
 
 class Goal(db.Model):
-    __tablename__ = "goal"
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String, nullable=False)
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    title: Mapped[str] = mapped_column(nullable=False)
+    tasks = db.relationship("Task", back_populates="goal")
 
-    def to_dict(self) -> dict:
+    def to_dict(self):
         return {
             "id": self.id,
-            "title": self.title,
+            "title": self.title
         }
 
     @classmethod
-    def from_dict(cls, data: dict):
-        title = data["title"]
+    def from_dict(cls, data):
+        title = data.get("title")
+        if not title:
+            raise KeyError("title is required")
         return cls(title=title)
