@@ -141,7 +141,7 @@ def test_route_utilities_create_model_with_goal_missing_title(client):
     with pytest.raises(HTTPException) as e:
         create_model(Goal, request_body)
     
-     response = e.value.get_response()
+    response = e.value.get_response()
     assert response.status_code == 400
 
     response_body = response.get_json()
