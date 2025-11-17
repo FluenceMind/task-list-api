@@ -4,7 +4,7 @@ from app.models.goal import Goal
 from app.models.task import Task
 from app.routes.route_utilities import create_model, validate_model
 
-@pytest.mark.skip(reason="No way to test this feature yet")
+
 def test_route_utilities_validate_model_with_task(client, three_tasks):
     #Act
     task_1 = validate_model(Task, 1)
@@ -24,7 +24,6 @@ def test_route_utilities_validate_model_with_task(client, three_tasks):
     assert task_3.title == "Pay my outstanding tickets 😭"
 
 
-@pytest.mark.skip(reason="No way to test this feature yet")
 def test_route_utilities_validate_model_with_task_invalid_id(client, three_tasks):
     #Act & Assert
     # Calling `validate_model` without being invoked by a route will
@@ -36,24 +35,21 @@ def test_route_utilities_validate_model_with_task_invalid_id(client, three_tasks
     response = e.value.get_response()
     assert response.status_code == 400
 
-    raise Exception("Complete test with an assertion about the response body")
-    # *****************************************************************************
-    # ** Complete test with an assertion about the response body ****************
-    # *****************************************************************************
+    response_body = response.get_json()
+    assert response_body == {"details": "Task One invalid"}
 
-@pytest.mark.skip(reason="No way to test this feature yet")
 def test_route_utilities_validate_model_with_task_missing_id(client, three_tasks):
     #Act & Assert
     with pytest.raises(HTTPException) as e:
         result_task = validate_model(Task, 4)
     
-    raise Exception("Complete test with assertion status code and response body")
-    # *****************************************************************************
-    # **Complete test with assertion about status code response body***************
-    # *****************************************************************************
+    response = e.value.get_response()
+    assert response.status_code == 404
+
+    response_body = response.get_json()
+    assert response_body == {"details": "Task 4 not found"}
 
     
-@pytest.mark.skip(reason="No way to test this feature yet")
 def test_route_utilities_validate_model_with_goal(client, one_goal):
     #Act
     goal_1 = validate_model(Goal, 1)
@@ -62,29 +58,30 @@ def test_route_utilities_validate_model_with_goal(client, one_goal):
     assert goal_1.id == 1
     assert goal_1.title == "Build a habit of going outside daily"
 
-@pytest.mark.skip(reason="No way to test this feature yet")
+
 def test_route_utilities_validate_model_with_goal_invalid_id(client, one_goal):
     #Act & Assert
     with pytest.raises(HTTPException) as e:
         result_task = validate_model(Goal, "One")
     
-    raise Exception("Complete test with assertion status code and response body")
-    # *****************************************************************************
-    # **Complete test with assertion about status code response body***************
-    # *****************************************************************************
+    response = e.value.get_response()
+    assert response.status_code == 400
 
-@pytest.mark.skip(reason="No way to test this feature yet")
+    response_body = response.get_json()
+    assert response_body == {"message": "Goal One invalid"}
+
+
 def test_route_utilities_validate_model_with_goal_missing_id(client, one_goal):
     #Act & Assert
     with pytest.raises(HTTPException) as e:
         result_task = validate_model(Goal, 4)
     
-    raise Exception("Complete test with assertion status code and response body")
-    # *****************************************************************************
-    # **Complete test with assertion about status code response body***************
-    # *****************************************************************************
+    response = e.value.get_response()
+    assert response.status_code == 404
 
-@pytest.mark.skip(reason="No way to test this feature yet")
+    response_body = response.get_json()
+    assert response_body == {"message": "Goal 4 not found"}
+
 def test_route_utilities_create_model_with_task(client):
     #Arrange
     request_body = {
@@ -103,7 +100,7 @@ def test_route_utilities_create_model_with_task(client):
     assert response[0]["is_complete"] == False
     assert response[1] == 201
 
-@pytest.mark.skip(reason="No way to test this feature yet")
+
 def test_route_utilities_create_model_with_task_missing_title(client):
     #Arrange
     request_body = {
@@ -120,7 +117,6 @@ def test_route_utilities_create_model_with_task_missing_title(client):
     assert response.get_json() == {"details": "Invalid data"}
 
 
-@pytest.mark.skip(reason="No way to test this feature yet")
 def test_route_utilities_create_model_with_goal(client):
     #Arrange
     request_body = {
