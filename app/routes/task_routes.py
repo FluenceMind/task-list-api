@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, make_response
 from app import db
 from app.models.task import Task
-from app.routes.route_utils import validate_model
+from app.routes.route_utilities import validate_model, create_model
 
 bp = Blueprint("tasks_bp", __name__, url_prefix="/tasks")
 
@@ -10,18 +10,9 @@ bp = Blueprint("tasks_bp", __name__, url_prefix="/tasks")
 def create_task():
     request_body = request.get_json() or {}
 
-    if "title" not in request_body or "description" not in request_body:
-        return make_response({"details": "Invalid data"}, 400)
+    response_body, status_code = create_model(Task, request_body)
 
-    try:
-        new_task = Task.from_dict(request_body)
-    except KeyError:
-        return make_response({"details": "Invalid data"}, 400)
-
-    db.session.add(new_task)
-    db.session.commit()
-
-    return new_task.to_dict(), 201
+    return response_body, status_code
 
 
 @bp.route("", methods=["GET"])
@@ -84,6 +75,7 @@ def mark_complete(task_id):
     task = validate_model(Task, task_id)
     task.completed_at = task.completed_at or db.func.now()
     db.session.commit()
+
     return "", 204
 
 
@@ -92,4 +84,5 @@ def mark_incomplete(task_id):
     task = validate_model(Task, task_id)
     task.completed_at = None
     db.session.commit()
+
     return "", 204
