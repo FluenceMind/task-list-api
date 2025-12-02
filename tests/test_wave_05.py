@@ -133,12 +133,9 @@ def test_update_goal(client, one_goal):
 
     assert response.status_code == 204
 
-    get_response = client.get("/goals/1")
-    get_body = get_response.get_json()
-
-    assert get_response.status_code == 200
-    assert get_body["id"] == 1
-    assert get_body["title"] == "Updated Title"
+    updated_goal = Goal.query.get(1)
+    assert updated_goal is not None
+    assert updated_goal.title == "Updated Title"
 
 
 def test_update_goal_not_found(client):

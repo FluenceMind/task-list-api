@@ -1,4 +1,4 @@
-from flask import abort, make_response
+from flask import abort, make_response, Response
 from app import db
 
 
@@ -14,7 +14,7 @@ def validate_model(model_class, model_id):
             400,
         ))
 
-    model = model_class.query.get(model_id_int)
+    model = db.session.get(model_class, model_id_int)
 
     if model is None:
         abort(make_response(
@@ -38,3 +38,12 @@ def create_model(model_class, request_body):
     db.session.commit()
 
     return new_model.to_dict(), 201
+
+
+def update_model(obj, data):
+    for attr, value in data.items():
+        if hasattr(obj, attr):
+            setattr(obj, attr, value)
+
+    db.session.commit()
+    return Response(status=204)
